@@ -1,4 +1,4 @@
-# 🐦 Flappy Bird Clone
+# 🐦 FlapOfDoom
 
 Ein moderner Klon des klassischen Flappy Bird Spiels, entwickelt mit Python und Pygame.
 
@@ -10,7 +10,6 @@ Dieses Projekt ist eine moderne Interpretation des beliebten Flappy Bird Spiels.
 
 - **Klassisches Gameplay**: Steuere den Vogel durch Hindernisse
 - **Moderne Grafik**: Tag- und Nachtmodus mit dynamischen Hintergründen
-- **Bestenliste**: Scrollbare Highscore-Liste mit spezieller Hervorhebung der Top 3
 - **Spieler-Profil**: Personalisierte Spielererfahrung durch Namenseingabe
 - **Sound-Effekte**: Reaktive Audio-Feedback für Spielerinteraktionen
 
@@ -49,7 +48,6 @@ flappy-bird/
 │
 ├── flappy.py           # Hauptspieldatei
 ├── README.md          # Projektdokumentation
-├── highscores.json    # Bestenlisten-Speicher
 ├── flappybird.exe    # Das eigendliche Spiel
 │
 └── assets/
@@ -69,23 +67,13 @@ flappy-bird/
 
 - **Leertaste/Pfeil nach oben**: Vogel nach oben bewegen
 - **ESC**: Zurück zum Hauptmenü
-- **L**: Bestenliste anzeigen
 - **Q**: Spiel beenden
-
-## 🏆 Bestenliste
-
-Die Bestenliste bietet:
-- Scrollbare Vollbild-Ansicht
-- Spezielle Hervorhebung der Top 3 Plätze
-- Moderne Glaseffekte und Animationen
-- Persistente Speicherung der Highscores
 
 ## 🔧 Technische Details
 
 - **Sprache**: Python 3.x
 - **Framework**: Pygame
 - **Grafikengine**: 2D-Rendering mit Pygame
-- **Datenspeicherung**: JSON-Format
 - **Kollisionserkennung**: Pixel-perfekte Maskenerkennung
 
 ## 🤝 Mitwirken
