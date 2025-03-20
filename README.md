@@ -100,11 +100,12 @@ Beiträge sind willkommen! Für größere Änderungen bitte zuerst ein Issue ers
 
 ## 📝 Lizenz
 
-Dieses Projekt ist unter der MIT-Lizenz lizenziert - siehe die [LICENSE](LICENSE) Datei für Details.
+Dieses Projekt ist unter der GNU-Lizenz lizenziert - siehe die [LICENSE](LICENSE) Datei für Details.
 
 ## 👥 Autoren
 
 - **[WyldesMagrora]** - *Initiale Arbeit*
+- **[JamesWestington]** - *Grafik Designer*
 
 ## 🙏 Danksagung
 
