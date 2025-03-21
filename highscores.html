@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Highscores</title>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f0f8ff;
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .container {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .back-button {
+            display: block;
+            width: 200px;
+            margin: 30px auto;
+            padding: 10px;
+            background-color: #3498db;
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Alle Highscores</h1>
+    <div class="container">
+        <table id="highscores">
+            <thead>
+                <tr>
+                    <th>Platz</th>
+                    <th>Name</th>
+                    <th>Punkte</th>
+                    <th>Datum</th>
+                </tr>
+            </thead>
+            <tbody id="scores-body">
+                <!-- Hier werden die Highscores eingefügt -->
+            </tbody>
+        </table>
+    </div>
+    
+    <a href="javascript:window.close()" class="back-button">Zurück zum Spiel</a>
+
+    <script>
+        // Lade die Highscores aus der JSON-Datei
+        fetch('highscores.json')
+            .then(response => response.json())
+            .then(data => {
+                const tableBody = document.getElementById('scores-body');
+                
+                // Sortiere nach Punktzahl (absteigend)
+                data.sort((a, b) => b.score - a.score);
+                
+                // Füge alle Einträge in die Tabelle ein
+                data.forEach((entry, index) => {
+                    const row = document.createElement('tr');
+                    
+                    const placeCell = document.createElement('td');
+                    placeCell.textContent = index + 1;
+                    
+                    const nameCell = document.createElement('td');
+                    nameCell.textContent = entry.name || 'Unbekannt';
+                    
+                    const scoreCell = document.createElement('td');
+                    scoreCell.textContent = entry.score;
+                    
+                    const dateCell = document.createElement('td');
+                    dateCell.textContent = entry.date || '-';
+                    
+                    row.appendChild(placeCell);
+                    row.appendChild(nameCell);
+                    row.appendChild(scoreCell);
+                    row.appendChild(dateCell);
+                    
+                    tableBody.appendChild(row);
+                });
+            })
+            .catch(error => {
+                console.error('Fehler beim Laden der Highscores:', error);
+                document.getElementById('scores-body').innerHTML = 
+                    '<tr><td colspan="4">Fehler beim Laden der Highscores</td></tr>';
+            });
+    </script>
+</body>
+</html>
