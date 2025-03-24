@@ -1,1 +1,1 @@
-{"coins": 440, "unlocked_birds": {"default": true, "blue": true, "red": true}, "current_bird": "default", "unlocked_backgrounds": {"day": true}, "current_background": "day"}
+{"coins": 40, "unlocked_birds": {"default": true}, "current_bird": "default", "unlocked_backgrounds": {"day": true}, "current_background": "day", "unlocked_particles": {"default": true}, "current_particle_effect": "default"}

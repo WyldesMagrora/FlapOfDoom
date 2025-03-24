@@ -1,6 +1,30 @@
 import pygame, random, time, os, sys, json
 from pygame.locals import *
 import webbrowser  # Importiere die webbrowser-Bibliothek
+import math
+from random import randint, uniform
+import ctypes
+try:
+    # Für Windows-spezifische Funktionalität
+    import ctypes.wintypes
+    # Setze die Prozess-AppUserModelID
+    myappid = 'magrora.flapofdoom.1.0'  # Beliebige eindeutige ID
+    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+except:
+    pass  # Auf nicht-Windows Systemen ignorieren
+
+# Nach den Imports, vor den Konstanten
+def get_resource_path(relative_path):
+    """ Korrigiert den Pfad für PyInstaller """
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    
+    full_path = os.path.join(base_path, relative_path)
+    if not os.path.exists(full_path):
+        print(f"Warnung: Resource nicht gefunden: {full_path}")
+    return full_path
 
 # Verbesserte visuelle Effekte
 MODERN_BACKGROUND = (50, 50, 70)
@@ -42,7 +66,7 @@ score = 0
 # Nach den Konstanten und vor pygame.init()
 
 # Initialisiere Spielerdaten
-COIN_REWARD = 10  # Münzen pro Punkt
+COIN_REWARD = 5  # Münzen pro Punkt
 player_coins = 0
 unlocked_birds = {"default": True}  # Freigeschaltete Vögel
 current_bird = "default"
@@ -51,23 +75,109 @@ current_bird = "default"
 BACKGROUND_SKINS = {
     "day": {
         "price": 0,
-        "files": ["background-day.png"],  # Jetzt im gleichen Format wie BIRD_SKINS
+        "files": ["background-day.png"],
         "description": "Sonniger Tag"
     },
     "night": {
         "price": 500,
         "files": ["background-night.png"],
         "description": "Sternenklare Nacht"
+    },
+    "midnight": {
+        "price": 1250,
+        "files": ["background-midnight.png"],
+        "description": "Mystische Mitternacht"
     }
 }
 
 # Nach den globalen Variablen am Anfang der Datei
 current_background = "day"
 
+# Nach den anderen Konstanten
+PARTICLE_COLORS = {
+    "white": (255, 255, 255),
+    "yellow": (255, 255, 0),
+    "blue": (0, 191, 255),
+    "red": (255, 69, 0),
+    "purple": (147, 112, 219)
+}
+
+# Partikelsystem Definitionen
+PARTICLE_EFFECTS = {
+    "default": {
+        "price": 0,
+        "color": "white",
+        "description": "Keine Partikel",
+        "max_particles": 0
+    },
+    "stardust": {
+        "price": 250,
+        "color": "yellow",
+        "description": "Funkelnde Sterne",
+        "max_particles": 6,
+        "requires": ["blue", "red", "yellow"]  # Benötigt alle Vogel-Skins
+    },
+    "ice": {
+        "price": 325,
+        "color": "blue",
+        "description": "Eisige Aura",
+        "max_particles": 8,
+        "requires": ["stardust", "night"]  # Benötigt Sternenstaub und Nacht-Hintergrund
+    },
+    "fire": {
+        "price": 650,
+        "color": "red",
+        "description": "Feurige Spur",
+        "max_particles": 10,
+        "requires": ["ice", "midnight"]  # Benötigt Eiseffekt und Mitternacht-Hintergrund
+    },
+    "magic": {
+        "price": 850,
+        "color": "purple",
+        "description": "Magische Essenz",
+        "max_particles": 12,
+        "requires": ["fire"]  # Benötigt alle anderen Effekte
+    }
+}
+
+# Nach den anderen globalen Variablen
+current_particle_effect = "default"
+unlocked_particles = {"default": True}
+
+# Nach den PARTICLE_EFFECTS Definitionen, vor der add_coins Funktion
+def can_unlock_particle(effect_name):
+    if effect_name == "default":
+        return True
+        
+    effect = PARTICLE_EFFECTS[effect_name]
+    if "requires" not in effect:
+        return True
+        
+    # Prüfe alle Voraussetzungen
+    for req in effect["requires"]:
+        if req in BIRD_SKINS and req not in unlocked_birds:
+            return False
+        if req in BACKGROUND_SKINS and req not in unlocked_backgrounds:
+            return False
+        if req in PARTICLE_EFFECTS and req not in unlocked_particles:
+            return False
+    return True
+
 def add_coins(amount):
     global player_coins
     player_coins += amount
     save_player_data()
+
+def get_save_path():
+    """Erstellt und gibt den Pfad zum Speichern der Spielerdaten zurück"""
+    # Erstelle einen spezifischen Ordner für das Spiel
+    save_dir = os.path.join(os.getenv('APPDATA'), 'FlapOfDoom')
+    
+    # Erstelle den Ordner, falls er nicht existiert
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
+    
+    return os.path.join(save_dir, 'player_data.json')
 
 def save_player_data():
     data = {
@@ -75,27 +185,38 @@ def save_player_data():
         "unlocked_birds": unlocked_birds,
         "current_bird": current_bird,
         "unlocked_backgrounds": unlocked_backgrounds,
-        "current_background": current_background
+        "current_background": current_background,
+        "unlocked_particles": unlocked_particles,
+        "current_particle_effect": current_particle_effect
     }
-    with open("player_data.json", "w") as f:
-        json.dump(data, f)
+    save_path = get_save_path()
+    try:
+        with open(save_path, "w") as f:
+            json.dump(data, f)
+    except Exception as e:
+        print(f"Fehler beim Speichern: {e}")
 
 def load_player_data():
-    global player_coins, unlocked_birds, current_bird, unlocked_backgrounds, current_background
+    global player_coins, unlocked_birds, current_bird, unlocked_backgrounds, current_background, unlocked_particles, current_particle_effect
+    save_path = get_save_path()
     try:
-        with open("player_data.json", "r") as f:
+        with open(save_path, "r") as f:
             data = json.load(f)
             player_coins = data.get("coins", 0)
             unlocked_birds = data.get("unlocked_birds", {"default": True})
             current_bird = data.get("current_bird", "default")
             unlocked_backgrounds = data.get("unlocked_backgrounds", {"day": True})
             current_background = data.get("current_background", "day")
+            unlocked_particles = data.get("unlocked_particles", {"default": True})
+            current_particle_effect = data.get("current_particle_effect", "default")
     except:
         player_coins = 0
         unlocked_birds = {"default": True}
         current_bird = "default"
         unlocked_backgrounds = {"day": True}
         current_background = "day"
+        unlocked_particles = {"default": True}
+        current_particle_effect = "default"
 
 # Lade gespeicherte Spielerdaten
 load_player_data()
@@ -105,6 +226,15 @@ pygame.init()
 pygame.font.init()
 pygame.mixer.init()
 
+# Lade und setze das Programm-Icon
+try:
+    # Lade das Icon-Bild
+    program_icon = pygame.image.load(get_resource_path(os.path.join('assets', 'sprites', 'Middle.png')))
+    # Setze das Fenster-Icon
+    pygame.display.set_icon(program_icon)
+except Exception as e:
+    print(f"Fehler beim Laden des Programm-Icons: {e}")
+
 # Initialisiere Schriftarten
 score_font = pygame.font.Font(None, 50)
 game_over_font = pygame.font.Font(None, 70)
@@ -113,28 +243,35 @@ input_font = pygame.font.Font(None, 32)
 
 # Erstelle Bildschirm
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption('Flappy Bird')
+pygame.display.set_caption('FlapOfDoom')
+
+# Nach pygame.display.set_mode() und vor pygame.display.set_caption()
+try:
+    # Hole das Fenster-Handle
+    hwnd = pygame.display.get_wm_info()['window']
+    # Lade das Icon als Windows-Icon
+    icon_path = get_resource_path(os.path.join('assets', 'sprites', 'Middle.png'))
+    icon_handle = ctypes.windll.user32.LoadImageW(
+        None,
+        icon_path,
+        1,  # IMAGE_ICON
+        0,
+        0,
+        0x00000010 | 0x00000040  # LR_LOADFROMFILE | LR_DEFAULTSIZE
+    )
+    # Setze das Taskbar-Icon
+    ctypes.windll.user32.SendMessageW(
+        hwnd,
+        0x0080,  # WM_SETICON
+        1,  # ICON_BIG
+        icon_handle
+    )
+except:
+    print("Taskbar-Icon konnte nicht gesetzt werden")
 
 if sys.version_info < (3, 6):
     print("Dieses Spiel benötigt Python 3.6 oder höher")
     sys.exit(1)
-
-def get_resource_path(relative_path):
-    """ Korrigiert den Pfad für PyInstaller """
-    try:
-        base_path = sys._MEIPASS
-    except Exception:
-        base_path = os.path.abspath(".")
-    
-    full_path = os.path.join(base_path, relative_path)
-    if not os.path.exists(full_path):
-        print(f"Warnung: Resource nicht gefunden: {full_path}")
-        # Fallback zu einem Standard-Asset oder raise Exception
-    return full_path
-
-# Setze den Arbeitsverzeichnis zum Executable-Verzeichnis
-if getattr(sys, 'frozen', False):
-    os.chdir(os.path.dirname(sys.executable))
 
 # Konami Code Definitionen
 KONAMI_CODE = [K_UP, K_UP, K_DOWN, K_DOWN, K_LEFT, K_RIGHT, K_LEFT, K_RIGHT, K_b, K_a]
@@ -161,19 +298,17 @@ def show_menu():
     menu_active = True
     
     while menu_active:
-        # Verwende den Nacht-Hintergrund
         screen.blit(BACKGROUND_NIGHT, (0, 0))
         
-        # Glaseffekt-Overlay für bessere Lesbarkeit
         overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
-        overlay.fill((0, 0, 0, 100))  # Leicht verdunkeln
+        overlay.fill((0, 0, 0, 100))
         screen.blit(overlay, (0, 0))
         
-        # Titel mit Gloweffekt
-        title_glow = game_over_font.render("FlapOfDoom", True, (100, 100, 255))
-        title = game_over_font.render("FlapOfDoom", True, WHITE)
-        screen.blit(title_glow, (SCREEN_WIDTH//2 - title.get_width()//2 + 2, SCREEN_HEIGHT//4 + 2))
-        screen.blit(title, (SCREEN_WIDTH//2 - title.get_width()//2, SCREEN_HEIGHT//4))
+        # Ersetze den Text-Titel mit dem Logo
+        logo_rect = LOGO_IMAGE.get_rect()
+        logo_rect.centerx = SCREEN_WIDTH // 2
+        logo_rect.top = SCREEN_HEIGHT // 4
+        screen.blit(LOGO_IMAGE, logo_rect)
         
         # Menü-Optionen mit Glaseffekt-Hintergrund
         options = [
@@ -217,7 +352,7 @@ def show_menu():
                 elif event.key == K_s:
                     show_shop()
                 elif event.key == K_a:
-                    show_about()
+                    show_error_message()
                 elif event.key == K_q:
                     pygame.quit()
                     sys.exit()
@@ -229,10 +364,25 @@ def show_menu():
                         elif key == K_s:
                             show_shop()
                         elif key == K_a:
-                            show_about()
+                            show_error_message()
                         elif key == K_q:
                             pygame.quit()
                             sys.exit()
+
+def show_error_message():
+    start_time = time.time()
+    error_font = pygame.font.Font(None, 36)
+    error_text = error_font.render("Error 404 - Class not Found", True, (255, 0, 0))
+    error_rect = error_text.get_rect()
+    
+    # Zentriere horizontal, aber behalte die vertikale Position am unteren Rand
+    error_rect.centerx = SCREEN_WIDTH // 2
+    error_rect.bottom = SCREEN_HEIGHT - 10
+    
+    while time.time() - start_time < 2:  # Zeige Nachricht für 2 Sekunden
+        screen.blit(error_text, error_rect)
+        pygame.display.update()
+        clock.tick(60)
 
 def show_about():
     # Video-Pfad
@@ -413,10 +563,12 @@ point_sound = pygame.mixer.Sound(get_resource_path(os.path.join('assets', 'audio
 # Lade Bilder (nach den Sound-Definitionen)
 BACKGROUND_DAY = pygame.image.load(get_resource_path(os.path.join('assets', 'sprites', 'background-day.png')))
 BACKGROUND_NIGHT = pygame.image.load(get_resource_path(os.path.join('assets', 'sprites', 'background-night.png')))
+BACKGROUND_MIDNIGHT = pygame.image.load(get_resource_path(os.path.join('assets', 'sprites', 'background-midnight.png')))
 
-# Skaliere beide Hintergründe
+# Skaliere alle Hintergründe
 BACKGROUND_DAY = pygame.transform.scale(BACKGROUND_DAY, (SCREEN_WIDTH, SCREEN_HEIGHT))
 BACKGROUND_NIGHT = pygame.transform.scale(BACKGROUND_NIGHT, (SCREEN_WIDTH, SCREEN_HEIGHT))
+BACKGROUND_MIDNIGHT = pygame.transform.scale(BACKGROUND_MIDNIGHT, (SCREEN_WIDTH, SCREEN_HEIGHT))
 
 # Nach dem Laden von BACKGROUND_DAY und BACKGROUND_NIGHT, füge hinzu:
 BEGIN_IMAGE = pygame.image.load(get_resource_path(os.path.join('assets', 'sprites', 'message.png'))).convert_alpha()
@@ -426,6 +578,11 @@ scale_factor = (SCREEN_WIDTH * 0.6) / original_size[0]
 new_size = (int(original_size[0] * scale_factor), int(original_size[1] * scale_factor))
 BEGIN_IMAGE = pygame.transform.scale(BEGIN_IMAGE, new_size)
 
+# Nach den anderen Bild-Ladebefehlen, füge hinzu:
+LOGO_IMAGE = pygame.image.load(get_resource_path(os.path.join('assets', 'sprites', 'logo.png'))).convert_alpha()
+# Skaliere das Logo auf eine angemessene Größe (passen Sie die Größe nach Bedarf an)
+LOGO_IMAGE = pygame.transform.scale(LOGO_IMAGE, (300, 100))  # Anpassen der Größe nach Bedarf
+
 # Definiere BIRD_SKINS
 BIRD_SKINS = {
     "default": {
@@ -434,17 +591,17 @@ BIRD_SKINS = {
         "description": "Standard Vogel"
     },
     "blue": {
-        "price": 100,
+        "price": 215,
         "files": ["bluebird-downflap.png", "bluebird-midflap.png", "bluebird-upflap.png"],
         "description": "Eiskalter Flieger"
     },
     "red": {
-        "price": 200,
+        "price": 390,
         "files": ["redbird-downflap.png", "redbird-midflap.png", "redbird-upflap.png"],
         "description": "Feuriger Phönix"
     },
     "yellow": {
-        "price": 300,
+        "price": 560,
         "files": ["yellowbird-downflap.png", "yellowbird-midflap.png", "yellowbird-upflap.png"],
         "description": "Goldener Blitz"
     }
@@ -508,6 +665,17 @@ class Bird(pygame.sprite.Sprite):
             self.current_image = (self.current_image + 1) % 3
             self.image = self.images[self.current_image]
 
+    def emit_particles(self):
+        if current_particle_effect in unlocked_particles and self.speed > 0:  # Nur bei Fallbewegung
+            effect = PARTICLE_EFFECTS[current_particle_effect]
+            if effect["max_particles"] > 0:  # Nur wenn Partikel aktiviert sind
+                particle_system.emit(
+                    self.rect.centerx,
+                    self.rect.centery + 15,  # Etwas nach unten versetzt
+                    amount=effect["max_particles"] // 2,  # Halbierte Partikelmenge
+                    effect_type=current_particle_effect
+                )
+
 # Erstelle Sprite-Gruppen
 bird_group = pygame.sprite.Group()
 bird = Bird()  # Jetzt wird current_bird korrekt erkannt
@@ -569,14 +737,15 @@ for i in range(2):
 clock = pygame.time.Clock()
 
 def show_shop():
-    global player_coins, current_bird, unlocked_birds, current_background, unlocked_backgrounds
+    global player_coins, current_bird, unlocked_birds, current_background, unlocked_backgrounds, current_particle_effect, unlocked_particles
     shopping = True
     selected_item = 0
-    current_category = "birds"  # "birds" oder "backgrounds"
-    scroll_offset = 0  # Initialisiere scroll_offset hier
+    current_category = "birds"  # "birds", "backgrounds" oder "particles"
+    scroll_offset = 0
     
     bird_items = list(BIRD_SKINS.keys())
     background_items = list(BACKGROUND_SKINS.keys())
+    particle_items = list(PARTICLE_EFFECTS.keys())
     
     # Lade Icons
     try:
@@ -599,35 +768,32 @@ def show_shop():
     ITEM_HEIGHT = 80
     PADDING = 10
     TITLE_HEIGHT = 40
-    HEADER_HEIGHT = 100  # Höhe für den Header-Bereich
-    CATEGORY_HEIGHT = 40  # Höhe für die Kategorie-Buttons
-    list_start_y = HEADER_HEIGHT + CATEGORY_HEIGHT + 10  # Startposition für Items
+    HEADER_HEIGHT = 100
+    CATEGORY_HEIGHT = 40
+    list_start_y = HEADER_HEIGHT + CATEGORY_HEIGHT + 10
     
-    # Erstelle die Texte für die Buttons mit kleinerer Schriftgröße
+    # Erstelle die Texte für die Buttons
     category_font = pygame.font.Font(None, 36)
     vogel_text = category_font.render("Vögel", True, WHITE)
     hintergrund_text = category_font.render("Hintergründe", True, WHITE)
+    partikel_text = category_font.render("Partikel", True, WHITE)
     
-    # Berechne die Buttonbreiten basierend auf dem Text plus Padding
-    button_padding = 40  # 20 Pixel Padding auf jeder Seite
+    # Berechne die Buttonbreiten
+    button_padding = 20  # Reduziere den Padding-Wert von 40 auf 20
     vogel_width = vogel_text.get_width() + button_padding
     hintergrund_width = hintergrund_text.get_width() + button_padding
+    partikel_width = partikel_text.get_width() + button_padding
     
-    # Zentriere die Buttons und berechne ihre Position
-    total_width = vogel_width + hintergrund_width + 20  # 20 Pixel Abstand zwischen den Buttons
+    # Zentriere die Buttons mit kleinerem Abstand
+    total_width = vogel_width + hintergrund_width + partikel_width + 20  # Reduziere den Abstand zwischen Buttons von 40 auf 20
     start_x = (SCREEN_WIDTH - total_width) // 2
     
-    # Aktualisiere die Button-Rechtecke
+    # Aktualisiere die Button-Rechtecke mit kleineren Abständen
     category_buttons = [
         pygame.Rect(start_x, HEADER_HEIGHT + 5, vogel_width, 40),
-        pygame.Rect(start_x + vogel_width + 20, HEADER_HEIGHT + 5, hintergrund_width, 40)
+        pygame.Rect(start_x + vogel_width + 10, HEADER_HEIGHT + 5, hintergrund_width, 40),  # Reduziere den Abstand von 20 auf 10
+        pygame.Rect(start_x + vogel_width + hintergrund_width + 20, HEADER_HEIGHT + 5, partikel_width, 40)  # Reduziere den Abstand von 40 auf 20
     ]
-    
-    # Initialisiere den scrollenden Text
-    control_text = "Steuerung: ↑/↓ zum Auswählen, ENTER zum Kaufen/Auswählen, ESC zum Verlassen"
-    text_surface = menu_font.render(control_text, True, WHITE)
-    text_width = text_surface.get_width()
-    scroll_offset = 0
     
     while shopping:
         clock.tick(30)
@@ -636,36 +802,36 @@ def show_shop():
         
         # Einheitliche Transparenz für den Hauptoverlay
         overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
-        overlay.fill((0, 0, 0, 80))  # Dunkler Hintergrund
+        overlay.fill((0, 0, 0, 80))
         screen.blit(overlay, (0, 0))
         
-        # Shop Titel
+        # Shop Titel - verschiebe nach unten
         title = game_over_font.render("SHOP", True, WHITE)
-        screen.blit(title, (SCREEN_WIDTH//2 - title.get_width()//2, 10))
+        screen.blit(title, (SCREEN_WIDTH//2 - title.get_width()//2, 40))  # Von 10 auf 40 geändert
         
-        # Münzen-Anzeige ohne Hintergrund
-        coins_pos = (SCREEN_WIDTH//2 - 90, 60)
+        # Münzen-Anzeige - verschiebe in die obere linke Ecke
+        coins_pos = (20, 20)  # Neue Position: 20 Pixel von links, 20 Pixel von oben
         if icons_loaded:
-            screen.blit(coin_icon, (coins_pos[0] + 10, coins_pos[1] + 3))
+            screen.blit(coin_icon, (coins_pos[0], coins_pos[1]))
             coins_text = menu_font.render(str(player_coins), True, WHITE)
-            screen.blit(coins_text, (coins_pos[0] + 40, coins_pos[1]))
+            screen.blit(coins_text, (coins_pos[0] + 30, coins_pos[1]))
         else:
             coins_text = menu_font.render(f"💰 {player_coins}", True, WHITE)
-            screen.blit(coins_text, (SCREEN_WIDTH//2 - coins_text.get_width()//2, coins_pos[1]))
+            screen.blit(coins_text, coins_pos)
         
-        # Zeichne Kategorie-Buttons ohne Hintergrund
+        # Zeichne Kategorie-Buttons
         for i, (rect, text) in enumerate([
             (category_buttons[0], "Vögel"),
-            (category_buttons[1], "Hintergründe")
+            (category_buttons[1], "Hintergründe"),
+            (category_buttons[2], "Partikel")
         ]):
-            # Nur Text rendern, kein Hintergrund
             text_surf = category_font.render(text, True, WHITE)
             text_rect = text_surf.get_rect(center=rect.center)
             screen.blit(text_surf, text_rect)
         
         # Zeige Items basierend auf der aktuellen Kategorie
-        items = bird_items if current_category == "birds" else background_items
-        skins = BIRD_SKINS if current_category == "birds" else BACKGROUND_SKINS
+        items = bird_items if current_category == "birds" else (background_items if current_category == "backgrounds" else particle_items)
+        skins = BIRD_SKINS if current_category == "birds" else (BACKGROUND_SKINS if current_category == "backgrounds" else PARTICLE_EFFECTS)
         
         # Item-Liste mit einheitlicher Transparenz
         button_rects = []
@@ -675,37 +841,44 @@ def show_shop():
             
             item_bg = pygame.Surface((SCREEN_WIDTH - 20, ITEM_HEIGHT), pygame.SRCALPHA)
             if i == selected_item:
-                pygame.draw.rect(item_bg, (255, 255, 255, 120), item_bg.get_rect(), border_radius=10)  # Ausgewählt: 120
+                pygame.draw.rect(item_bg, (255, 255, 255, 120), item_bg.get_rect(), border_radius=10)
             else:
-                pygame.draw.rect(item_bg, (255, 255, 255, 80), item_bg.get_rect(), border_radius=10)  # Normal: 80
+                pygame.draw.rect(item_bg, (255, 255, 255, 80), item_bg.get_rect(), border_radius=10)
             
             item_rect = item_bg.get_rect(topleft=(10, y_pos))
             screen.blit(item_bg, item_rect)
             button_rects.append((item_rect, i))
             
-            # Vorschau-Bild laden und anzeigen
+            # Vorschau und Text
             if current_category == "birds":
                 preview_img = pygame.image.load(get_resource_path(os.path.join('assets', 'sprites', skins[item_name]["files"][1])))
                 preview_img = pygame.transform.scale(preview_img, (50, 50))
                 screen.blit(preview_img, (20, y_pos + 15))
-                # Text-Position für Vögel bleibt gleich
-                name_text = menu_font.render(item_name.capitalize(), True, BLACK)
-                screen.blit(name_text, (80, y_pos + 10))
-            else:  # Hintergründe
+                text_x = 80
+            elif current_category == "backgrounds":
                 preview_img = pygame.image.load(get_resource_path(os.path.join('assets', 'sprites', skins[item_name]["files"][0])))
                 preview_img = pygame.transform.scale(preview_img, (80, 50))
                 screen.blit(preview_img, (20, y_pos + 15))
-                # Text-Position für Hintergründe 10 Pixel weiter links (von 120 auf 110)
-                name_text = menu_font.render(item_name.capitalize(), True, BLACK)
-                screen.blit(name_text, (110, y_pos + 10))  # Von 120 auf 110 geändert
-
-            # Status/Preis mit Icons - Position anpassen basierend auf Kategorie
-            text_x = 80 if current_category == "birds" else 110  # Auch hier von 120 auf 110 geändert
+                text_x = 110
+            else:  # Partikel
+                # Zeichne einen farbigen Kreis als Vorschau
+                color = PARTICLE_COLORS[skins[item_name]["color"]]
+                preview_surface = pygame.Surface((50, 50), pygame.SRCALPHA)
+                pygame.draw.circle(preview_surface, (*color, 200), (25, 25), 20)
+                screen.blit(preview_surface, (20, y_pos + 15))
+                text_x = 80
             
+            name_text = menu_font.render(item_name.capitalize(), True, BLACK)
+            screen.blit(name_text, (text_x, y_pos + 10))
+            
+            # Status/Preis
             unlocked = (current_category == "birds" and item_name in unlocked_birds) or \
-                      (current_category == "backgrounds" and item_name in unlocked_backgrounds)
+                      (current_category == "backgrounds" and item_name in unlocked_backgrounds) or \
+                      (current_category == "particles" and item_name in unlocked_particles)
+            
             is_selected = (current_category == "birds" and item_name == current_bird) or \
-                         (current_category == "backgrounds" and item_name == current_background)
+                         (current_category == "backgrounds" and item_name == current_background) or \
+                         (current_category == "particles" and item_name == current_particle_effect)
             
             if unlocked:
                 if is_selected:
@@ -733,16 +906,6 @@ def show_shop():
                 else:
                     status_text = menu_font.render(f"🔒 {skins[item_name]['price']} 💰", True, (200, 150, 0))
                     screen.blit(status_text, (text_x, y_pos + 45))
-        
-        # Scrollender Text in der Steuerungsleiste
-        controls_bg = pygame.Surface((SCREEN_WIDTH, 40), pygame.SRCALPHA)
-        pygame.draw.rect(controls_bg, (0, 0, 0, 80), controls_bg.get_rect())  # Angepasst auf 80
-        screen.blit(controls_bg, (0, SCREEN_HEIGHT - 40))
-        
-        # Rendere den scrollenden Text
-        scroll_offset = (scroll_offset - 2) % text_width  # Scrollgeschwindigkeit
-        screen.blit(text_surface, (scroll_offset + 10, SCREEN_HEIGHT - 35))
-        screen.blit(text_surface, (scroll_offset + text_width + 10, SCREEN_HEIGHT - 35))
         
         pygame.display.update()
         
@@ -772,7 +935,7 @@ def show_shop():
                             save_player_data()
                         else:
                             hit_sound.play()
-                    else:
+                    elif current_category == "backgrounds":
                         if selected_item_name in unlocked_backgrounds:
                             current_background = selected_item_name
                             point_sound.play()
@@ -785,6 +948,20 @@ def show_shop():
                             save_player_data()
                         else:
                             hit_sound.play()
+                    else:  # particles
+                        if selected_item_name in unlocked_particles:
+                            current_particle_effect = selected_item_name
+                            point_sound.play()
+                            save_player_data()
+                        elif (player_coins >= PARTICLE_EFFECTS[selected_item_name]["price"] and 
+                              can_unlock_particle(selected_item_name)):
+                            player_coins -= PARTICLE_EFFECTS[selected_item_name]["price"]
+                            unlocked_particles[selected_item_name] = True
+                            current_particle_effect = selected_item_name
+                            point_sound.play()
+                            save_player_data()
+                        else:
+                            hit_sound.play()
             if event.type == MOUSEBUTTONDOWN:
                 if category_buttons[0].collidepoint(event.pos):
                     current_category = "birds"
@@ -792,9 +969,13 @@ def show_shop():
                 elif category_buttons[1].collidepoint(event.pos):
                     current_category = "backgrounds"
                     selected_item = 0
-                mouse_pos = pygame.mouse.get_pos()
+                elif category_buttons[2].collidepoint(event.pos):
+                    current_category = "particles"
+                    selected_item = 0
+                
+                # Füge die Klick-Erkennung für Items hinzu
                 for rect, idx in button_rects:
-                    if rect.collidepoint(mouse_pos):
+                    if rect.collidepoint(event.pos):
                         selected_item = idx
                         selected_item_name = items[selected_item]
                         if current_category == "birds":
@@ -810,7 +991,7 @@ def show_shop():
                                 save_player_data()
                             else:
                                 hit_sound.play()
-                        else:
+                        elif current_category == "backgrounds":
                             if selected_item_name in unlocked_backgrounds:
                                 current_background = selected_item_name
                                 point_sound.play()
@@ -819,6 +1000,20 @@ def show_shop():
                                 player_coins -= BACKGROUND_SKINS[selected_item_name]["price"]
                                 unlocked_backgrounds[selected_item_name] = True
                                 current_background = selected_item_name
+                                point_sound.play()
+                                save_player_data()
+                            else:
+                                hit_sound.play()
+                        else:  # particles
+                            if selected_item_name in unlocked_particles:
+                                current_particle_effect = selected_item_name
+                                point_sound.play()
+                                save_player_data()
+                            elif (player_coins >= PARTICLE_EFFECTS[selected_item_name]["price"] and 
+                                  can_unlock_particle(selected_item_name)):
+                                player_coins -= PARTICLE_EFFECTS[selected_item_name]["price"]
+                                unlocked_particles[selected_item_name] = True
+                                current_particle_effect = selected_item_name
                                 point_sound.play()
                                 save_player_data()
                             else:
@@ -936,21 +1131,17 @@ def show_pause():
     button_rects = []
     
     while paused:
-        # Zeichne den Tag-Hintergrund
         screen.blit(BACKGROUND_DAY, (0, 0))
         
-        # Halbtransparenter Overlay
         overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 128))
         screen.blit(overlay, (0, 0))
         
-        # Pause Text mit Gloweffekt
-        pause_text = game_over_font.render("PAUSE", True, (100, 100, 255))
-        pause_text_glow = game_over_font.render("PAUSE", True, WHITE)
-        pause_rect = pause_text.get_rect(center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//3))
-        
-        screen.blit(pause_text, (pause_rect.x + 2, pause_rect.y + 2))  # Glow-Effekt
-        screen.blit(pause_text_glow, pause_rect)
+        # Ersetze den Pause-Text mit dem Logo
+        logo_rect = LOGO_IMAGE.get_rect()
+        logo_rect.centerx = SCREEN_WIDTH // 2
+        logo_rect.top = SCREEN_HEIGHT // 3 - 50  # Etwas höher als der ursprüngliche Text
+        screen.blit(LOGO_IMAGE, logo_rect)
         
         # Zeichne Buttons
         button_rects.clear()  # Liste leeren für neue Buttons
@@ -993,6 +1184,66 @@ def show_pause():
                             return "continue"
                         elif key == K_m:
                             return "menu"
+
+def get_current_background():
+    if current_background == "day":
+        return BACKGROUND_DAY
+    elif current_background == "night":
+        return BACKGROUND_NIGHT
+    elif current_background == "midnight":
+        return BACKGROUND_MIDNIGHT
+    return BACKGROUND_DAY  # Fallback zum Tag-Hintergrund
+
+class Particle:
+    def __init__(self, x, y, effect_type="default"):
+        self.x = x
+        self.y = y
+        self.effect_type = effect_type
+        self.color = PARTICLE_COLORS[PARTICLE_EFFECTS[effect_type]["color"]]
+        self.size = randint(2, 4)
+        self.life = 1.0  # Lebensdauer des Partikels (1.0 = voll, 0.0 = tot)
+        self.decay_rate = uniform(0.02, 0.05)  # Wie schnell der Partikel verschwindet
+        
+        # Zufällige Bewegungsrichtung
+        angle = uniform(0, 2 * math.pi)
+        speed = uniform(1, 3)
+        self.dx = math.cos(angle) * speed
+        self.dy = math.sin(angle) * speed
+
+    def update(self):
+        self.x += self.dx
+        self.y += self.dy
+        self.life -= self.decay_rate
+        self.size = max(0, self.size - 0.1)
+        return self.life > 0
+
+    def draw(self, screen):
+        if self.life > 0:
+            alpha = int(self.life * 255)
+            particle_surface = pygame.Surface((self.size * 2, self.size * 2), pygame.SRCALPHA)
+            pygame.draw.circle(
+                particle_surface,
+                (*self.color, alpha),
+                (self.size, self.size),
+                self.size
+            )
+            screen.blit(particle_surface, (int(self.x - self.size), int(self.y - self.size)))
+
+class ParticleSystem:
+    def __init__(self):
+        self.particles = []
+        
+    def emit(self, x, y, amount=10, effect_type="default"):
+        for _ in range(amount):
+            self.particles.append(Particle(x, y, effect_type))
+            
+    def update_and_draw(self, screen):
+        self.particles = [p for p in self.particles if p.update()]
+        for particle in self.particles:
+            particle.draw(screen)
+
+# Füge diese Zeilen nach der Bird-Klasse hinzu
+particle_system = ParticleSystem()
 
 # Haupt-Spiel-Loop
 while True:
@@ -1039,7 +1290,7 @@ while True:
                     wing_sound.play()
                     begin = False
         
-        screen.blit(BACKGROUND_DAY, (0, 0))
+        screen.blit(get_current_background(), (0, 0))
         
         # Mittige Positionierung des BEGIN_IMAGE
         begin_rect = BEGIN_IMAGE.get_rect()
@@ -1082,7 +1333,7 @@ while True:
                     bird.bump()
                     wing_sound.play()
 
-        screen.blit(BACKGROUND_DAY if current_background == "day" else BACKGROUND_NIGHT, (0, 0))
+        screen.blit(get_current_background(), (0, 0))
     
         if is_off_screen(ground_group.sprites()[0]):
             ground_group.remove(ground_group.sprites()[0])
@@ -1109,6 +1360,11 @@ while True:
         bird_group.update()
         ground_group.update()
         pipe_group.update()
+    
+        # Partikeleffekte
+        particle_system.update_and_draw(screen)
+        if playing:  # Nur während des aktiven Spiels Partikel emittieren
+            bird.emit_particles()
     
         bird_group.draw(screen)
         pipe_group.draw(screen)

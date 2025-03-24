@@ -1,112 +1,194 @@
-# 🐦 Flappy Bird Clone
+# 🎮 FlapOfDoom
 
-Ein moderner Klon des klassischen Flappy Bird Spiels, entwickelt mit Python und Pygame.
+FlapOfDoom ist eine moderne und erweiterte Version des klassischen Flappy Bird Spiels, entwickelt in Python mit Pygame. Das Spiel bietet ein umfangreiches Shop-System, verschiedene Charaktere, Tag/Nacht-Wechsel und ein innovatives Münzsystem.
 
-## 📝 Projektbeschreibung
+![FlapOfDoom Screenshot](assets/sprites/message.png)
 
-Dieses Projekt ist eine moderne Interpretation des beliebten Flappy Bird Spiels. Es wurde mit Python und der Pygame-Bibliothek entwickelt und bietet zusätzliche Features wie eine Bestenliste mit modernem Design.
+## 📋 Inhaltsverzeichnis
+- [Features](#-features)
+- [Installation](#-installation)
+  - [Installation über Setup](#installation-über-setup)
+  - [Installation von CD](#installation-von-cd)
+  - [Manuelle Installation](#manuelle-installation)
+- [Spielanleitung](#-spielanleitung)
+- [Shop-System](#-shop-system)
+- [Münzsystem](#-münzsystem)
+- [Highscore-System](#-highscore-system)
+- [Technische Details](#-technische-details)
+- [Fehlerbehebung](#-fehlerbehebung)
+- [Support](#-support)
 
-### 🎮 Spielfunktionen
+## 🌟 Features
 
-- **Klassisches Gameplay**: Steuere den Vogel durch Hindernisse
-- **Moderne Grafik**: Tag- und Nachtmodus mit dynamischen Hintergründen
-- **Bestenliste**: Scrollbare Highscore-Liste mit spezieller Hervorhebung der Top 3
-- **Spieler-Profil**: Personalisierte Spielererfahrung durch Namenseingabe
-- **Sound-Effekte**: Reaktive Audio-Feedback für Spielerinteraktionen
+### Grundfunktionen
+- Klassisches Flappy Bird Gameplay mit modernen Elementen
+- Hochwertige Grafiken und flüssige Animationen
+- Integriertes Shop-System mit Freischaltbaren Inhalten
+- Online-Highscore-System
+- Automatische Speicherung des Fortschritts
 
-### 🎯 Hauptmerkmale
+### Anpassungsmöglichkeiten
+- **Vogel-Charaktere:**
+  - Standard-Vogel (kostenlos)
+  - Blauer Eisvogel
+  - Roter Phönix
+  - Goldener Blitz
+- **Hintergründe:**
+  - Sonniger Tag
+  - Sternenklare Nacht
+  - Mystische Mitternacht
+- **Partikeleffekte:**
+  - Sternenstaub
+  - Eisaura
+  - Feuerspur
+  - Magische Essenz
 
-- Intuitive Steuerung (Leertaste/Pfeiltaste nach oben)
-- Moderne UI mit Glaseffekten und Animationen
-- Persistente Highscore-Speicherung
-- Responsive Kollisionserkennung
-- Dynamische Schwierigkeitsanpassung
+## 💿 Installation
 
-## 🛠️ Installation
+### Installation über Setup
+1. Führen Sie `FlapOfDoom_Setup.exe` aus
+2. Wählen Sie die gewünschte Installationssprache
+3. Folgen Sie den Anweisungen des Installationsassistenten
+4. Optional: Erstellen Sie eine Desktop-Verknüpfung
+5. Nach der Installation kann das Spiel über das Startmenü oder die Desktop-Verknüpfung gestartet werden
 
-1. Stelle sicher, dass Python 3.x installiert ist
-2. Installiere die erforderlichen Abhängigkeiten:
+### Installation von CD
+1. Legen Sie die FlapOfDoom-CD ein
+2. Wenn AutoPlay aktiviert ist:
+   - Wählen Sie "FlapOfDoom installieren" im AutoPlay-Fenster
+   - Folgen Sie den Installationsanweisungen
+3. Wenn AutoPlay deaktiviert ist:
+   - Öffnen Sie den CD-Inhalt manuell
+   - Starten Sie `FlapOfDoom_Setup.exe`
+   - Folgen Sie den Installationsanweisungen
+
+### Manuelle Installation
+Für Entwickler und fortgeschrittene Benutzer:
+1. Installieren Sie Python 3.6 oder höher
+2. Installieren Sie die erforderlichen Pakete:
 ```bash
 pip install pygame
+pip install pillow
 ```
-3. Klone das Repository:
-```bash
-git clone [repository-url]
-```
-4. Navigiere zum Projektverzeichnis:
-```bash
-cd flappy-bird
-```
-5. Starte das Spiel:
+3. Klonen Sie das Repository oder laden Sie den Quellcode herunter
+4. Starten Sie das Spiel mit:
 ```bash
 python flappy.py
 ```
 
-## 📂 Projektstruktur
+## 🎮 Spielanleitung
 
-```
-flappy-bird/
-│
-├── flappy.py           # Hauptspieldatei
-├── README.md          # Projektdokumentation
-├── highscores.json    # Bestenlisten-Speicher
-│
-└── assets/
-    ├── sprites/       # Spielgrafiken
-    │   ├── background-day.png
-    │   ├── background-night.png
-    │   ├── bird-*.png
-    │   ├── pipe-green.png
-    │   └── base.png
-    │
-    └── audio/         # Soundeffekte
-        ├── wing.wav
-        └── hit.wav
-```
+### Steuerung
+- **Springen:** 
+  - Leertaste
+  - Pfeiltaste nach oben
+  - Linke Maustaste
+- **Pause:** ESC-Taste
+- **Menü-Navigation:** 
+  - Maus
+  - Pfeiltasten + Enter
+- **Shop:** S-Taste
+- **Zurück zum Hauptmenü:** M-Taste (im Pause-Menü)
 
-## 🎮 Steuerung
+### Spielablauf
+1. Wählen Sie im Hauptmenü "Spielen"
+2. Steuern Sie den Vogel durch die Hindernisse
+3. Sammeln Sie Münzen für den Shop
+4. Bei Kollision: Game Over und Highscore-Eintrag
 
-- **Leertaste/Pfeil nach oben**: Vogel nach oben bewegen
-- **ESC**: Zurück zum Hauptmenü
-- **L**: Bestenliste anzeigen
-- **Q**: Spiel beenden
+## 🛍️ Shop-System
 
-## 🏆 Bestenliste
+### Vogel-Skins
+| Skin | Preis | Beschreibung | Voraussetzung |
+|------|-------|--------------|---------------|
+| Standard | Kostenlos | Klassischer Vogel | - |
+| Blau | 215 | Eiskalter Flieger | - |
+| Rot | 390 | Feuriger Phönix | - |
+| Gelb | 560 | Goldener Blitz | - |
 
-Die Bestenliste bietet:
-- Scrollbare Vollbild-Ansicht
-- Spezielle Hervorhebung der Top 3 Plätze
-- Moderne Glaseffekte und Animationen
-- Persistente Speicherung der Highscores
+### Hintergründe
+| Hintergrund | Preis | Beschreibung |
+|-------------|-------|--------------|
+| Tag | Kostenlos | Sonniger Himmel |
+| Nacht | 500 | Sternenklarer Himmel |
+| Mitternacht | 1250 | Mystische Atmosphäre |
+
+### Partikeleffekte
+| Effekt | Preis | Beschreibung | Voraussetzungen |
+|--------|-------|--------------|-----------------|
+| Standard | Kostenlos | Keine Partikel | - |
+| Sternenstaub | 250 | Gelbe Sterne | Alle Vogel-Skins |
+| Eisaura | 325 | Blaue Kristalle | Sternenstaub + Nacht |
+| Feuerspur | 650 | Rote Flammen | Eisaura + Mitternacht |
+| Magie | 850 | Violette Energie | Alle anderen Effekte |
+
+## 💰 Münzsystem
+- **Verdienen:**
+  - 5 Münzen pro passiertem Hindernis
+  - Bonus-Münzen durch Easter Eggs
+  - Konami-Code (↑↑↓↓←→←→BA): 1000 Münzen
+- **Ausgeben:**
+  - Neue Charaktere
+  - Hintergründe
+  - Partikeleffekte
+
+## 🏆 Highscore-System
+
+### Online-System
+- Automatische Übertragung an den Server
+- Einsehbar unter: https://api.magrora.de/flapofdoom
+- Benötigt Internetverbindung
+
+### Offline-System
+- Lokale Speicherung in `highscores.json`
+- Automatische Synchronisation bei Internetverbindung
+- HTML-Ansicht der lokalen Bestenliste
 
 ## 🔧 Technische Details
 
-- **Sprache**: Python 3.x
-- **Framework**: Pygame
-- **Grafikengine**: 2D-Rendering mit Pygame
-- **Datenspeicherung**: JSON-Format
-- **Kollisionserkennung**: Pixel-perfekte Maskenerkennung
+### Systemanforderungen
+- Windows 7/8/10/11
+- 2GB RAM
+- 100MB freier Speicherplatz
+- Internetverbindung (optional, für Online-Features)
 
-## 🤝 Mitwirken
+### Dateisystem
+- `flappy.py`: Hauptspieldatei
+- `assets/`: Verzeichnis für Grafiken, Audio und Video
+  - `sprites/`: Spielgrafiken
+  - `audio/`: Soundeffekte
+  - `video/`: Videosequenzen
 
-Beiträge sind willkommen! Für größere Änderungen bitte zuerst ein Issue erstellen.
+### Speichersystem
+- Spielerdaten werden in `player_data.json` gespeichert
+- Lokale Highscores in `highscores.json`
+- Automatische Speicherung von:
+  - Münzen
+  - Freigeschalteten Skins
+  - Aktuell ausgewähltem Skin
+  - Highscores
 
-1. Fork das Projekt
-2. Erstelle einen Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit deine Änderungen (`git commit -m 'Add some AmazingFeature'`)
-4. Push zum Branch (`git push origin feature/AmazingFeature`)
-5. Öffne einen Pull Request
+## 🐛 Bekannte Probleme
+
+- Bei sehr hohen Bildschirmauflösungen können Grafikfehler auftreten
+- Online-Highscores benötigen eine aktive Internetverbindung
 
 ## 📝 Lizenz
 
-Dieses Projekt ist unter der MIT-Lizenz lizenziert - siehe die [LICENSE](LICENSE) Datei für Details.
+Dieses Projekt steht unter der MIT-Lizenz. Siehe [LICENSE](LICENSE) für weitere Details.
 
-## 👥 Autoren
+## 👥 Mitwirkende
 
-- **[WyldesMagrora]** - *Initiale Arbeit*
+- Entwickler
+- Designer
+- Tester
 
-## 🙏 Danksagung
+## 📞 Support
 
-- Pygame Community für Ressourcen und Support
-- Alle Mitwirkenden und Tester
+Bei Fragen oder Problemen:
+- Erstelle ein Issue auf GitHub
+- Kontaktiere uns über [Website/Email]
+
+---
+Entwickelt mit ❤️ und Python
 
