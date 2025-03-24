@@ -1,0 +1,21 @@
+[autorun]
+open=FlapOfDoom_Setup.exe
+icon=FlapOfDoom.ico
+label=FlapOfDoom
+action=FlapOfDoom installieren
+
+[AutoRun.Amd64]
+open=FlapOfDoom_Setup.exe
+icon=FlapOfDoom.ico
+label=FlapOfDoom
+action=FlapOfDoom installieren
+
+[AutoRun]
+shellexecute=FlapOfDoom_Setup.exe
+name=FlapOfDoom installieren
+icon=FlapOfDoom.ico
+
+[Content]
+MusicFiles=false
+PictureFiles=false
+VideoFiles=false 
